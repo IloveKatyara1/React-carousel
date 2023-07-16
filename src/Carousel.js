@@ -5,6 +5,7 @@ const Carousel = ({ children, showSlides }) => {
     const sliderContent = useRef(null);
 
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [cantMove, setCantMove] = useState(false);
 
     const childrenSlides = React.Children.map(children, (child) => {
         return React.cloneElement(child, {
@@ -12,6 +13,18 @@ const Carousel = ({ children, showSlides }) => {
             style: { width: `${100 / showSlides}%` },
         });
     });
+
+    const fullChildrenList = [
+        ...childrenSlides
+            .slice(childrenSlides.length - showSlides, childrenSlides.length)
+            .map((child, index) => React.cloneElement(child, { key: `clone-${index}` })),
+
+        ...childrenSlides,
+
+        ...childrenSlides
+            .slice(0, showSlides)
+            .map((child, index) => React.cloneElement(child, { key: `clone-${index + childrenSlides.length}` })),
+    ];
 
     const ChangeSlideByBtn = (num) => {
         let newCurrent = currentSlide;
@@ -21,8 +34,36 @@ const Carousel = ({ children, showSlides }) => {
     };
 
     useEffect(() => {
-        sliderContent.current.style.left = (currentSlide / -showSlides) * 100 + '%';
+        if (cantMove) {
+            return;
+        }
+
+        sliderContent.current.style.left = (currentSlide / -showSlides) * 100 - 100 + '%';
+
+        if (currentSlide < 0) {
+            timeoutLastFirstSlide(childrenSlides.length - showSlides);
+        } else if (currentSlide >= childrenSlides.length) {
+            timeoutLastFirstSlide(0);
+        }
     }, [currentSlide]);
+
+    const timeoutLastFirstSlide = (frstLast) => {
+        setCantMove(true);
+
+        setTimeout(() => {
+            sliderContent.current.style.transition = '0s all';
+            sliderContent.current.style.left = (frstLast / -showSlides) * 100 - 100 + '%';
+
+            setCurrentSlide(frstLast);
+
+            setTimeout(() => {
+                setCurrentSlide(frstLast);
+                setCantMove(false);
+
+                sliderContent.current.style.transition = '1s all';
+            }, 25);
+        }, 975);
+    };
 
     console.log(currentSlide, 'currentSlide');
 
@@ -34,9 +75,9 @@ const Carousel = ({ children, showSlides }) => {
             <div className="carouselComp__inner">
                 <div
                     className="carouselComp__content"
-                    style={{ width: (childrenSlides.length / showSlides) * 100 + '%' }}
+                    style={{ width: (fullChildrenList.length / showSlides) * 100 + '%' }}
                     ref={sliderContent}>
-                    {childrenSlides}
+                    {fullChildrenList}
                 </div>
             </div>
             <button className="carouselComp__next" onClick={() => ChangeSlideByBtn(1)}>
