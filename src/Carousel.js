@@ -92,6 +92,37 @@ const Carousel = ({ children, showSlides }) => {
         dotsRef.current[slide / showSlides].classList.add('carouselComp__dot_active');
     };
 
+    let mouseStart;
+
+    const onStart = (e) => {
+        if (cantMove) return;
+
+        mouseStart = e.nativeEvent.targetTouches[0].clientX;
+        sliderContent.current.style.transition = '0s all';
+    };
+
+    const onMove = (e) => {
+        const move = e.nativeEvent.targetTouches[0].clientX;
+
+        if (cantMove) return;
+        if (mouseStart - move > 400 || mouseStart - move < -400) return;
+
+        sliderContent.current.style.left = (currentSlide / -showSlides) * 100 - 100 - (mouseStart - move) / 4 + '%';
+    };
+
+    const onEnd = (e) => {
+        sliderContent.current.style.transition = '1s all';
+
+        const end = mouseStart - e.nativeEvent.changedTouches[0].clientX;
+
+        if (end > 100) setCurrentSlide((currentSlide) => currentSlide + showSlides);
+        else if (end < -100) setCurrentSlide((currentSlide) => currentSlide - showSlides);
+        else setCurrentSlide((currentSlide) => currentSlide);
+
+        console.log(end, 'onEnd');
+        console.log(currentSlide, 'currentSlide');
+    };
+
     console.log(currentSlide, 'currentSlide');
 
     return (
@@ -103,7 +134,10 @@ const Carousel = ({ children, showSlides }) => {
                 <div
                     className="carouselComp__content"
                     style={{ width: (fullChildrenList.length / showSlides) * 100 + '%' }}
-                    ref={sliderContent}>
+                    ref={sliderContent}
+                    onTouchStart={onStart}
+                    onTouchMove={onMove}
+                    onTouchEnd={onEnd}>
                     {fullChildrenList}
                 </div>
             </div>
