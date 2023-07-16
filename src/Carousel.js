@@ -93,34 +93,52 @@ const Carousel = ({ children, showSlides }) => {
     };
 
     let mouseStart;
+    let wasTouch;
 
-    const onStart = (e) => {
+    const onStart = (e, trigger = 'touch') => {
         if (cantMove) return;
 
-        mouseStart = e.nativeEvent.targetTouches[0].clientX;
+        if (trigger === 'touch') mouseStart = e.nativeEvent.targetTouches[0].clientX;
+        else {
+            wasTouch = true;
+            mouseStart = e.clientX;
+        }
+
         sliderContent.current.style.transition = '0s all';
     };
 
-    const onMove = (e) => {
-        const move = e.nativeEvent.targetTouches[0].clientX;
+    const onMove = (e, trigger = 'touch') => {
+        let move;
+
+        if (trigger === 'touch') move = e.nativeEvent.targetTouches[0].clientX;
+        else if (wasTouch) move = e.clientX;
 
         if (cantMove) return;
         if (mouseStart - move > 400 || mouseStart - move < -400) return;
+        if (trigger !== 'touch' && !wasTouch) return;
 
+        sliderContent.current.style.cursor = 'grabbing';
+        sliderContent.current.style.userSelect = 'none';
         sliderContent.current.style.left = (currentSlide / -showSlides) * 100 - 100 - (mouseStart - move) / 4 + '%';
     };
 
-    const onEnd = (e) => {
+    const onEnd = (e, trigger = 'touch') => {
         sliderContent.current.style.transition = '1s all';
 
-        const end = mouseStart - e.nativeEvent.changedTouches[0].clientX;
+        let end;
+
+        if (trigger === 'touch') end = mouseStart - e.nativeEvent.changedTouches[0].clientX;
+        else {
+            wasTouch = false;
+            end = mouseStart - e.clientX;
+        }
 
         if (end > 100) setCurrentSlide((currentSlide) => currentSlide + showSlides);
         else if (end < -100) setCurrentSlide((currentSlide) => currentSlide - showSlides);
-        else setCurrentSlide((currentSlide) => currentSlide);
+        else sliderContent.current.style.left = (currentSlide / -showSlides) * 100 - 100 + '%';
 
-        console.log(end, 'onEnd');
-        console.log(currentSlide, 'currentSlide');
+        sliderContent.current.style.cursor = 'grab';
+        sliderContent.current.style.userSelect = '';
     };
 
     console.log(currentSlide, 'currentSlide');
@@ -137,7 +155,10 @@ const Carousel = ({ children, showSlides }) => {
                     ref={sliderContent}
                     onTouchStart={onStart}
                     onTouchMove={onMove}
-                    onTouchEnd={onEnd}>
+                    onTouchEnd={onEnd}
+                    onMouseUp={(e) => onEnd(e, 'mouse')}
+                    onMouseDown={(e) => onStart(e, 'mouse')}
+                    onMouseMove={(e) => onMove(e, 'mouse')}>
                     {fullChildrenList}
                 </div>
             </div>
