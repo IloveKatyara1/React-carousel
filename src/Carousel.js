@@ -141,8 +141,6 @@ const Carousel = ({ children, showSlides }) => {
         sliderContent.current.style.userSelect = '';
     };
 
-    console.log(currentSlide, 'currentSlide');
-
     return (
         <div className="carouselComp">
             <button className="carouselComp__prev" onClick={() => ChangeSlideByBtn(-1)}>
